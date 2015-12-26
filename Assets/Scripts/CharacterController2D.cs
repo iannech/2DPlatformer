@@ -15,6 +15,8 @@ public class CharacterController2D : MonoBehaviour {
 
     BoxCollider2D collider;
     RaycastOrigins raycastOrigins;
+    public CollisionInfo collisions;
+
 
 	void Start () {
 
@@ -34,6 +36,8 @@ public class CharacterController2D : MonoBehaviour {
     public void Move(Vector3 velocity)
     {
         updateRayCastOrigins();
+        collisions.Reset(); // we want a blank slate each time
+
 
         if(velocity.x !=0)
         {
@@ -68,6 +72,12 @@ public class CharacterController2D : MonoBehaviour {
             {
                 velocity.x = (hit.distance - skinWidth) * directionX;
                 rayLength = hit.distance; // once we hit something, we want to set the rayLength at that collision point
+
+                // set collisions depending on how we've collided with something
+                collisions.left = directionX == -1; // if we hit something and we're going left, then collision is set to left
+                collisions.right = directionX == 1;
+
+                
             } 
         }
     }
@@ -91,6 +101,10 @@ public class CharacterController2D : MonoBehaviour {
             {
                 velocity.y = (hit.distance - skinWidth) * directionY;
                 rayLength = hit.distance; // once we hit something, we want to set the rayLength at that collision point
+
+                // set collisions depending on how we've collided with something
+                collisions.below  = directionY == -1; 
+                collisions.above = directionY == 1;
             }
         }
     }
@@ -123,6 +137,19 @@ public class CharacterController2D : MonoBehaviour {
     {
         public Vector2 topLeft, topRight;
         public Vector2 bottomLeft, bottomRight;
+    }
+
+    // To know exactly where our collisions are taking place
+    public struct CollisionInfo
+    {
+        public bool above, below;
+        public bool right, left;
+
+        public void Reset()
+        {
+            above = below = false;
+            right = left = false;
+        }
     }
 	
 	
