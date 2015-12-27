@@ -10,6 +10,7 @@ public class CharacterController2D : MonoBehaviour {
     public int horizontalRayCount = 4;
     public int verticalRayCount = 4;
 
+    float maxClimbSlopeAngle = 80;
     float horizontalRaySpacing;
     float verticalRaySpacing;
 
@@ -70,14 +71,43 @@ public class CharacterController2D : MonoBehaviour {
 
             if (hit)
             {
-                velocity.x = (hit.distance - skinWidth) * directionX;
-                rayLength = hit.distance; // once we hit something, we want to set the rayLength at that collision point
+                // get angle between player and slope. Use bottom-most ray to calculate.
+                float slopeAngle = Vector2.Angle(hit.normal, Vector2.up);
+                if(i == 0 && slopeAngle <= maxClimbSlopeAngle)
+                {
+                    // to ensure that our player starts climbing a slope right at the base of the slope
+                    float distanceToSlopeStart = 0;
+                    if (slopeAngle != collisions.slopeAngleOld)
+                    {
+                        distanceToSlopeStart = hit.distance - skinWidth;
+                        velocity.x -= distanceToSlopeStart * directionX;
+                    }
+                    climbSlope(ref velocity, slopeAngle);
+                    velocity.x += distanceToSlopeStart * directionX;
+                }
 
-                // set collisions depending on how we've collided with something
-                collisions.left = directionX == -1; // if we hit something and we're going left, then collision is set to left
-                collisions.right = directionX == 1;
+                if (! collisions.climbingSlope || slopeAngle >maxClimbSlopeAngle )
+                {
+                    
+                    velocity.x = (hit.distance - skinWidth) * directionX;
+                    rayLength = hit.distance; // Once we hit something, we want to set the rayLength at that collision point
 
-                
+                    /* Eliminate jittery-sideways collisons with obstacles on a slope.
+                       WHy this happens? 
+                       velocity.x is reduced while velocity.y remains the same.
+                       Solution:
+                       recalculate velocity.y
+                    */
+                    if (collisions.climbingSlope)
+                    {
+                        velocity.y = Mathf.Tan(collisions.slopeAngle * Mathf.Deg2Rad) * Mathf.Abs(velocity.x);
+                    }
+
+                    // set collisions depending on how we've collided with something
+                    collisions.left = directionX == -1; // if we hit something and we're going left, then collision is set to left
+                    collisions.right = directionX == 1;
+                }
+          
             } 
         }
     }
@@ -102,11 +132,31 @@ public class CharacterController2D : MonoBehaviour {
                 velocity.y = (hit.distance - skinWidth) * directionY;
                 rayLength = hit.distance; // once we hit something, we want to set the rayLength at that collision point
 
+                if (collisions.climbingSlope)
+                {
+                    velocity.x = velocity.y / Mathf.Tan(collisions.slopeAngle * Mathf.Deg2Rad) * Mathf.Sign(velocity.x); 
+                }
                 // set collisions depending on how we've collided with something
                 collisions.below  = directionY == -1; 
                 collisions.above = directionY == 1;
             }
         }
+    }
+
+    void climbSlope(ref Vector3 velocity, float slopeAngle)
+    {
+        float moveDistance = Mathf.Abs(velocity.x);
+        float climbVelocityY = Mathf.Sin(slopeAngle * Mathf.Deg2Rad) * moveDistance;
+
+        if (velocity.y <= climbVelocityY)
+        { 
+            velocity.y = climbVelocityY;
+            velocity.x = Mathf.Cos(slopeAngle * Mathf.Deg2Rad) * moveDistance * Mathf.Sign(velocity.x);
+            collisions.below = true;
+            collisions.climbingSlope = true;
+            collisions.slopeAngle = slopeAngle;
+        }
+        
     }
 
     //
@@ -144,11 +194,16 @@ public class CharacterController2D : MonoBehaviour {
     {
         public bool above, below;
         public bool right, left;
+        public bool climbingSlope;
+        public float slopeAngle, slopeAngleOld;
 
         public void Reset()
         {
             above = below = false;
             right = left = false;
+            climbingSlope = false;
+            slopeAngleOld = slopeAngle;
+            slopeAngle = 0;
         }
     }
 	
