@@ -1,39 +1,17 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(BoxCollider2D))]
-public class CharacterController2D : MonoBehaviour {
 
-    public LayerMask collisionMask; //helps us determine which objects we are collide with.
-
-    const float skinWidth = .015f;
-    public int horizontalRayCount = 4;
-    public int verticalRayCount = 4;
+public class CharacterController2D :RayCastController {
 
     float maxClimbSlopeAngle = 80;
     float maxDescendingAngle = 80;
 
-    float horizontalRaySpacing;
-    float verticalRaySpacing;
-
-    BoxCollider2D collider;
-    RaycastOrigins raycastOrigins;
     public CollisionInfo collisions;
 
-
-	void Start () {
-
-        collider = GetComponent<BoxCollider2D>();
-        calculateRaySpacing();
-    }
-
-    void Update()
+    public override void Start()
     {
-        // test if rayspacing is calculated correctly
-        
-       
-
-        
+        base.Start();
     }
 
     public void Move(Vector3 velocity)
@@ -219,35 +197,7 @@ public class CharacterController2D : MonoBehaviour {
         }
     }
 
-    //
-    void updateRayCastOrigins()
-    {
-        Bounds bounds = collider.bounds;
-        bounds.Expand(skinWidth * -2);
-
-        raycastOrigins.bottomLeft = new Vector2(bounds.min.x, bounds.min.y);
-        raycastOrigins.bottomRight = new Vector2(bounds.max.x, bounds.min.y);
-        raycastOrigins.topLeft = new Vector2(bounds.min.x, bounds.max.y);
-        raycastOrigins.topRight = new Vector2(bounds.max.x, bounds.max.y);
-    }
-
-    void calculateRaySpacing()
-    {
-        Bounds bounds = collider.bounds;
-        bounds.Expand(skinWidth * -2);
-
-        horizontalRayCount = Mathf.Clamp(horizontalRayCount, 2, int.MaxValue);
-        verticalRayCount = Mathf.Clamp(verticalRayCount, 2, int.MaxValue);
-
-        // calculate ray spacing
-        horizontalRaySpacing = bounds.size.y / (horizontalRayCount - 1);
-        verticalRaySpacing = bounds.size.x / (verticalRayCount - 1);
-    }
-    struct RaycastOrigins
-    {
-        public Vector2 topLeft, topRight;
-        public Vector2 bottomLeft, bottomRight;
-    }
+   
 
     // To know exactly where our collisions are taking place
     public struct CollisionInfo
