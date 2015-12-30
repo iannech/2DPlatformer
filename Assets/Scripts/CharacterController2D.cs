@@ -14,7 +14,7 @@ public class CharacterController2D :RayCastController {
         base.Start();
     }
 
-    public void Move(Vector3 velocity)
+    public void Move(Vector3 velocity, bool standingOnPlatform = false)
     {
         updateRayCastOrigins();
         collisions.Reset(); // we want a blank slate each time
@@ -35,6 +35,13 @@ public class CharacterController2D :RayCastController {
         }
        
         transform.Translate(velocity);
+
+        
+        if (standingOnPlatform)
+        {
+            collisions.below = true;
+        }
+        
     }
 
     void HorizontalCollisions(ref Vector3 velocity)
@@ -56,6 +63,12 @@ public class CharacterController2D :RayCastController {
 
             if (hit)
             {
+                
+                if(hit.distance == 0)
+                {
+                    continue;
+                }
+
                 // get angle between player and slope. Use bottom-most ray to calculate.
                 float slopeAngle = Vector2.Angle(hit.normal, Vector2.up);
                 if(i == 0 && slopeAngle <= maxClimbSlopeAngle)
