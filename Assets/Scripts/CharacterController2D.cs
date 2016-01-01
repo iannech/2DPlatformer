@@ -12,6 +12,7 @@ public class CharacterController2D :RayCastController {
     public override void Start()
     {
         base.Start();
+        collisions.faceDir = 1;
     }
 
     public void Move(Vector3 velocity, bool standingOnPlatform = false)
@@ -20,15 +21,18 @@ public class CharacterController2D :RayCastController {
         collisions.Reset(); // we want a blank slate each time
         collisions.velocityOld = velocity;
 
+        if(velocity.x != 0)
+        {
+            collisions.faceDir = (int)Mathf.Sign(velocity.x);
+        }
         if(velocity.y < 0)
         {
             descendSlope(ref velocity);
 
         }
-        if(velocity.x !=0)
-        {
-            HorizontalCollisions(ref velocity);
-        }
+
+        HorizontalCollisions(ref velocity);
+        
         if(velocity.y != 0)
         {
             verticalCollisions(ref velocity);
@@ -47,9 +51,14 @@ public class CharacterController2D :RayCastController {
     void HorizontalCollisions(ref Vector3 velocity)
     {
         // get direction of y velocity
-        float directionX = Mathf.Sign(velocity.x);
+        float directionX = collisions.faceDir;
         float rayLength = Mathf.Abs(velocity.x) + skinWidth;
 
+        if(Mathf.Abs(velocity.x) < skinWidth)
+        {
+            rayLength = 2 * skinWidth; // One skinWidth is for moving the ray to the edge of the collider and the 2nd skinWidth allowa collider detection
+
+        }
 
         for (int i = 0; i < horizontalRayCount; i++)
         {
@@ -223,6 +232,7 @@ public class CharacterController2D :RayCastController {
 
         public float slopeAngle, slopeAngleOld;
         public bool descendingSlope;
+        public int faceDir; // 1- facing right, -1 facing left
 
         public void Reset()
         {
