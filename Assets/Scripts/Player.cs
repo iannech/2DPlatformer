@@ -8,7 +8,8 @@ public class Player : MonoBehaviour {
         jumpHeight and timeToJumpApex which will be translated to the previously defined variables
      */
 
-    public float jumpHeight = 4;
+    public float maxJumpHeight = 4;
+    public float minJumpHeight = 1;
     public float timeToJumpApex = .4f;
     float accelerationTimeAirborne = .2f;
     float accelerationTimeGrounded = .1f;
@@ -20,7 +21,8 @@ public class Player : MonoBehaviour {
 
     float gravity;
     float moveSpeed = 6;
-    float jumpVelocity;
+    float maxJumpVelocity;
+    float minJumpVelocity;
     float velocityXSmoothing;
 
     public Vector2 wallJumpClimb;
@@ -37,9 +39,10 @@ public class Player : MonoBehaviour {
         controller = GetComponent<CharacterController2D>();
 
         // calculate gravity and jumpVelocity
-        gravity = -(2 * jumpHeight) / Mathf.Pow(timeToJumpApex, 2);
-        jumpVelocity = Mathf.Abs(gravity) * timeToJumpApex;
-        print("Gravity" + gravity + "JumpVelocity" + jumpVelocity);
+        gravity = -(2 * maxJumpHeight) / Mathf.Pow(timeToJumpApex, 2);
+        maxJumpVelocity = Mathf.Abs(gravity) * timeToJumpApex;
+        minJumpVelocity = Mathf.Sqrt(2 * Mathf.Abs(gravity) * minJumpHeight);
+        print("Gravity" + gravity + "JumpVelocity" + maxJumpVelocity);
 	}
 
 
@@ -85,12 +88,6 @@ public class Player : MonoBehaviour {
             }
         }
 
-        if(controller.collisions.above || controller.collisions.below)
-        {
-            velocity.y = 0;
-        }
-
-
         if(Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.Space))
         {
             if (wallSliding)
@@ -114,11 +111,24 @@ public class Player : MonoBehaviour {
             }
             if (controller.collisions.below)
             {
-                velocity.y = jumpVelocity;
+                velocity.y = maxJumpVelocity;
+            }
+        }
+
+        if(Input.GetKeyUp(KeyCode.Space) || Input.GetKeyUp(KeyCode.W))
+        {
+            if(velocity.y > minJumpVelocity)
+            {
+                velocity.y = minJumpVelocity;
             }
         }
        
         velocity.y += gravity * Time.deltaTime;
-        controller.Move(velocity * Time.deltaTime);
-	}
+        controller.Move(velocity * Time.deltaTime, input);
+
+        if (controller.collisions.above || controller.collisions.below)
+        {
+            velocity.y = 0;
+        }
+    }
 }

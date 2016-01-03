@@ -7,6 +7,8 @@ public class CharacterController2D :RayCastController {
     float maxClimbSlopeAngle = 80;
     float maxDescendingAngle = 80;
 
+    Vector2 playerInput;
+
     public CollisionInfo collisions;
 
     public override void Start()
@@ -15,11 +17,18 @@ public class CharacterController2D :RayCastController {
         collisions.faceDir = 1;
     }
 
-    public void Move(Vector3 velocity, bool standingOnPlatform = false)
+    //Move Overload fn
+    public void Move(Vector3 velocity, bool standingOnPlatform)
+    {
+        Move(velocity, Vector2.zero, standingOnPlatform);
+    }
+
+    public void Move(Vector3 velocity,Vector2 input, bool standingOnPlatform = false)
     {
         updateRayCastOrigins();
         collisions.Reset(); // we want a blank slate each time
         collisions.velocityOld = velocity;
+        playerInput = input;
 
         if(velocity.x != 0)
         {
@@ -142,6 +151,24 @@ public class CharacterController2D :RayCastController {
 
             if (hit)
             {
+                // Jump through platforms
+                if (hit.collider.tag == "Through")
+                {
+                    if (directionY == 1 || hit.distance == 0)
+                    {
+                        continue;
+                    }
+                    if (collisions.fallingThroughPlatform)
+                    {
+                        continue;
+                    }
+                    if(playerInput.y == -1)
+                    {
+                        collisions.fallingThroughPlatform = true;
+                        Invoke("resetFallingThroughPlatform", .5f);
+                        continue;
+                    }
+                }
                 velocity.y = (hit.distance - skinWidth) * directionY;
                 rayLength = hit.distance; // once we hit something, we want to set the rayLength at that collision point
 
@@ -219,7 +246,10 @@ public class CharacterController2D :RayCastController {
         }
     }
 
-   
+   void resetFallingThroughPlatform()
+    {
+        collisions.fallingThroughPlatform = false;
+    }
 
     // To know exactly where our collisions are taking place
     public struct CollisionInfo
@@ -227,6 +257,7 @@ public class CharacterController2D :RayCastController {
         public bool above, below;
         public bool right, left;
         public bool climbingSlope;
+        public bool fallingThroughPlatform;
 
         public Vector3 velocityOld;
 
